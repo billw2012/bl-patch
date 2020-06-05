@@ -26,6 +26,29 @@ def items_from_submodule(file):
 
 PATCH_NAME = 'zzzzMergedPatch'
 
+SUBMODULE_TEMPLATE = '''
+<Module>
+    <Name value="" />
+    <Id value="" />
+    <Version value="v1.4.0" />
+    <SingleplayerModule value="true" />
+    <MultiplayerModule value="false" />
+    <Official value="false" />
+    <DependedModules/>
+    <SubModules/>
+    <Xmls>
+        <XmlNode>
+            <XmlName id="Items" path="patchitems" />
+            <IncludedGameTypes>
+                <Gametype value="Campaign" />
+                <Gametype value="CampaignStoryMode" />
+                <GameType value="CustomGame" />
+            </IncludedGameTypes>
+        </XmlNode>
+    </Xmls>
+</Module>
+'''
+
 
 def main():
     import argparse
@@ -174,9 +197,7 @@ def export_module(modulesdir, modulename, dependencies, itemspatched):
         shutil.rmtree(outdir)
 
     print(f'Writing new patch mod {modulename}')
-    ourpath = os.path.dirname(os.path.realpath(__file__))
-    modulexml = etree.parse(os.path.join(
-        ourpath, 'SubModule.xml.template')).getroot()
+    modulexml = etree.fromstring(SUBMODULE_TEMPLATE).getroot()
     modulexml.find('Name').attrib['value'] = f'Generated Items Patch ({datetime.datetime.now()})'
     modulexml.find('Id').attrib['value'] = modulename
 
