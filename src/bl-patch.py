@@ -168,7 +168,7 @@ def main():
                                           pretty_print=True)
 
     print('DONE!')
-
+    input("Press Enter to exit...")
     return 0
 
 
@@ -316,4 +316,15 @@ class CustomPatcher(object):
 
 
 if __name__ == "__main__":
-    main()
+    import logging
+    import traceback
+    try:
+        main()
+    except Exception:
+        print('***********************************************************************')
+        print('An error occurred, please include this text in any error report')
+        logging.error(traceback.format_exc())
+        print('***********************************************************************')
+        print('Report errors here: https://github.com/billw2012/bl-patch/issues/new')
+        print('')
+        input("Press Enter to exit...")
