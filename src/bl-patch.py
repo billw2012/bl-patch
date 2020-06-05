@@ -1,5 +1,6 @@
 import os
 from lxml import etree
+from copy import deepcopy
 
 BASE_MODULES = [
     'Native',
@@ -8,7 +9,8 @@ BASE_MODULES = [
     'CustomBattle',
     'StoryMode'
 ]
-SP_ITEMS_REL_PATH = 'SandBoxCore\ModuleData\spitems.xml'
+SP_ITEMS_REL_PATH = 'SandBoxCore\\ModuleData\\spitems.xml'
+
 
 def items_from_submodule(file):
     root = etree.parse(file).getroot()
@@ -16,24 +18,27 @@ def items_from_submodule(file):
     submodule_root = os.path.dirname(file)
     for xmlname in root.iter('XmlName'):
         if(xmlname.get('id') == 'Items'):
-            items.append(os.path.join(submodule_root, 'ModuleData', xmlname.get('path') + '.xml'))
+            items.append(os.path.join(submodule_root,
+                                      'ModuleData',
+                                      xmlname.get('path') + '.xml'))
     return items
+
 
 PATCH_NAME = 'zzzzMergedPatch'
 
+
 def main():
     import argparse
-    import glob
-    from copy import deepcopy
     from xmldiff import main as xmldiffmain
 
     parser = argparse.ArgumentParser(
         description='Generate a merged items patch mod for Mound & Blade II: Bannerlord')
     parser.add_argument('--base', type=str, help='Bannerlord directory',
-                        default='C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord')
+                        default='C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord')
     parser.add_argument('--verbose', type=bool, help='Verbose logging, includes each detected change in each item',
                         default=False)
-    parser.add_argument('mods', type=str, nargs='*', help='List of mods to generate patch from, in load order. Defaults to reading LauncherData.xml')
+    parser.add_argument('mods', type=str, nargs='*',
+                        help='List of mods to generate patch from, in load order. Defaults to reading LauncherData.xml')
     args = parser.parse_args()
     if not os.path.isdir(args.base):
         print(f"{args.base} doesn't appear to be a valid directory")
@@ -43,9 +48,9 @@ def main():
     if not os.path.isfile(basespitems):
         print(f"{basespitems} doesn't exist")
         return 2
-    print(f'Loading base spitems from {basespitems} ... ', end = '')
+    print(f'Loading base spitems from {basespitems} ... ', end='')
     itemsbase = etree.parse(basespitems).getroot()
-    print(f'done')
+    print('done')
 
     itemspatched = deepcopy(itemsbase)
 
@@ -54,9 +59,10 @@ def main():
     # https://stackoverflow.com/a/30924555/6402065
     launcherDataXmlPath = get_launcher_xml_path()
     if not os.path.isfile(launcherDataXmlPath):
-        print(f"Couldn't find Launcher config at {launcherDataXmlPath}. Run the launcher to generate it.")
+        print(
+            f"Couldn't find Launcher config at {launcherDataXmlPath}. Run the launcher to generate it.")
         return 3
-    #os.path.expanduser('~\Configs\LauncherData.xml')
+    # os.path.expanduser('~\Configs\LauncherData.xml')
     launcherData = etree.parse(launcherDataXmlPath).getroot()
     spdata = launcherData.find('SingleplayerData').find('ModDatas')
 
@@ -77,16 +83,6 @@ def main():
             # Only non official mods of course
             if off is None or off.attrib['value'] != 'true':
                 mods.append(id)
-        # print('No mod list specified, defaulting to all mods')
-        # submodules = glob.glob(os.path.join(args.base, '**\SubModule.xml'))
-        # for sub in submodules:
-        #     subxml = etree.parse(sub).getroot()
-        #     # Ignore any existing generated patch
-        #     if subxml.find('Id').attrib['value'] == PATCH_NAME:
-        #         continue
-        #     off = subxml.find('Official')
-        #     if off is None or off.attrib['value'] != 'true':
-        #         mods.append(os.path.dirname(sub))
 
     for mod in mods:
         print(f'Patching items from {mod}:')
@@ -94,17 +90,17 @@ def main():
             itemsxml = etree.parse(itemsxmlpath).getroot()
             for item in itemsxml.iter('Item'):
                 id = item.get('id')
-                print(f'  {id} ... ', end = '')
+                print(f'  {id} ... ', end='')
                 baseitem = itemsbase.find(f".//Item[@id='{id}']")
                 if(baseitem is None):
                     # If we don't find it we can just clone it as is
-                    print(f'added')
+                    print('added')
                     itemspatched.append(deepcopy(item))
                     # We will use this as the base item for further patching as well
                     itemsbase.append(deepcopy(item))
                 else:
                     # Merge using base item
-                    print(f'merged')
+                    print('merged')
                     # Make new empty trees to do the diff in
                     baseitemdt = etree.Element('Items')
                     baseitemdt.append(deepcopy(baseitem))
@@ -114,7 +110,7 @@ def main():
 
                     if(args.verbose):
                         for d in diff:
-                            print (f'    {d}')
+                            print(f'    {d}')
 
                     # Apply the diff
                     # Take the existing patched item
@@ -128,7 +124,8 @@ def main():
                     # Put the result back into the real patched items tree
                     itemspatched.append(deepcopy(mergedt.find('Item')))
 
-    export_module(modulesdir, PATCH_NAME, BASE_MODULES + args.mods, itemspatched)
+    export_module(modulesdir, PATCH_NAME,
+                  BASE_MODULES + args.mods, itemspatched)
 
     print('Updating LauncherData.xml ... ')
     # Remove any existing LauncherData entry so we can readd at the end
@@ -140,25 +137,32 @@ def main():
     etree.SubElement(patchNode, 'Id').text = PATCH_NAME
     etree.SubElement(patchNode, 'IsSelected').text = 'true'
 
-    #os.remove(launcherDataXmlPath)
+    # os.remove(launcherDataXmlPath)
 
-    etree.ElementTree(launcherData).write(launcherDataXmlPath, encoding='utf-8', xml_declaration=True, pretty_print=True)
+    etree.ElementTree(launcherData).write(launcherDataXmlPath,
+                                          encoding='utf-8',
+                                          xml_declaration=True,
+                                          pretty_print=True)
 
-    print(f'DONE!')
+    print('DONE!')
 
     return 0
+
 
 def get_launcher_xml_path():
     # https://stackoverflow.com/a/30924555/6402065
     import ctypes.wintypes
     CSIDL_PERSONAL = 5       # My Documents
     SHGFP_TYPE_CURRENT = 0   # Get current, not default value
-    buf= ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathW(None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf)
+    buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+    ctypes.windll.shell32.SHGetFolderPathW(
+        None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf)
 
     print('No mod list specified, reading LauncherData.xml to determine mod list and order')
-    launcherDataXmlPath = os.path.join(buf.value, 'Mount and Blade II Bannerlord', 'Configs', 'LauncherData.xml')
+    launcherDataXmlPath = os.path.join(
+        buf.value, 'Mount and Blade II Bannerlord', 'Configs', 'LauncherData.xml')
     return launcherDataXmlPath
+
 
 def export_module(modulesdir, modulename, dependencies, itemspatched):
     import datetime
@@ -171,7 +175,8 @@ def export_module(modulesdir, modulename, dependencies, itemspatched):
 
     print(f'Writing new patch mod {modulename}')
     ourpath = os.path.dirname(os.path.realpath(__file__))
-    modulexml = etree.parse(os.path.join(ourpath, 'SubModule.xml.template')).getroot()
+    modulexml = etree.parse(os.path.join(
+        ourpath, 'SubModule.xml.template')).getroot()
     modulexml.find('Name').attrib['value'] = f'Generated Items Patch ({datetime.datetime.now()})'
     modulexml.find('Id').attrib['value'] = modulename
 
@@ -181,11 +186,20 @@ def export_module(modulesdir, modulename, dependencies, itemspatched):
 
     # Write the SubModule.xml
     os.mkdir(outdir)
-    etree.ElementTree(modulexml).write(os.path.join(outdir, 'SubModule.xml'), encoding='utf-8', xml_declaration=True, pretty_print=True)
+    etree.ElementTree(modulexml).write(
+        os.path.join(outdir, 'SubModule.xml'),
+        encoding='utf-8',
+        xml_declaration=True,
+        pretty_print=True)
 
     # Write the actual patched items xml
     os.mkdir(os.path.join(outdir, 'ModuleData'))
-    etree.ElementTree(itemspatched).write(os.path.join(outdir, 'ModuleData', 'patchitems.xml'), encoding='utf-8', xml_declaration=True, pretty_print=True)
+    etree.ElementTree(itemspatched).write(
+        os.path.join(outdir, 'ModuleData', 'patchitems.xml'),
+        encoding='utf-8',
+        xml_declaration=True,
+        pretty_print=True)
+
 
 def safe_get_node(tree, xpath):
     node = tree.xpath(xpath)
@@ -193,6 +207,7 @@ def safe_get_node(tree, xpath):
         return node[0]
     else:
         return None
+
 
 class CustomPatcher(object):
 
@@ -277,6 +292,7 @@ class CustomPatcher(object):
     def _handle_InsertComment(self, action, tree):
         target = tree.xpath(action.target)[0]
         target.insert(action.position, etree.Comment(action.text))
+
 
 if __name__ == "__main__":
     main()
