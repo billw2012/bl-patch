@@ -197,7 +197,7 @@ def export_module(modulesdir, modulename, dependencies, itemspatched):
         shutil.rmtree(outdir)
 
     print(f'Writing new patch mod {modulename}')
-    modulexml = etree.fromstring(SUBMODULE_TEMPLATE).getroot()
+    modulexml = etree.fromstring(SUBMODULE_TEMPLATE)
     modulexml.find('Name').attrib['value'] = f'Generated Items Patch ({datetime.datetime.now()})'
     modulexml.find('Id').attrib['value'] = modulename
 
